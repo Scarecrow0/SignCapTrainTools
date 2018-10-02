@@ -7,17 +7,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # from .make_resnet import my_resnet
-from algorithm_models.make_VGG import make_vgg
+from .make_VGG import make_vgg
 
 # CNN: input len -> output len
 # Lout=floor((Lin+2∗padding−dilation∗(kernel_size−1)−1)/stride+1)
 
 
-WEIGHT_DECAY = 0.000002
-BATCH_SIZE = 64
+WEIGHT_DECAY = 0.00001
+BATCH_SIZE = 128
 LEARNING_RATE = 0.0003
-EPOCH = 250
-
+EPOCH = 90
 
 class SiameseNetwork(nn.Module):
     def __init__(self, train=True):
@@ -36,11 +35,13 @@ class SiameseNetwork(nn.Module):
         # self.coding_model = load_model_from_classify()
         self.coding_model = make_vgg(input_chnl=14, layers=[2, 3], layers_chnl=[64, 128])
 
+
         self.out = torch.nn.Sequential(
+            nn.Dropout(0.25),
             nn.LeakyReLU(),
             nn.Linear(256, 128),
             nn.LeakyReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(128, 64),
         )
 
         self._initialize_weights()
@@ -89,17 +90,19 @@ class SiameseNetwork(nn.Module):
         print(str(self))
 
         optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE)
-        loss_func = ContrastiveLoss()
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.1)
-        data_set = generate_data_set(0.06, SiameseNetworkTrainDataSet, 16)
+
+        batch_k = 48
+        data_set = generate_data_set(0.06, SiameseNetworkTrainDataSet, batch_k)
+
+        loss_func = ContrastiveLoss()
+
         data_loader = {
             'train': DataLoader.DataLoader(data_set['train'],
                                            shuffle=True,
-                                           batch_size=BATCH_SIZE,
-                                           num_workers=1),
+                                           batch_size=BATCH_SIZE, ),
             'test': DataLoader.DataLoader(data_set['test'],
-                                          shuffle=True,
-                                          batch_size=1, )
+                                          shuffle=True, )
         }
         train(model=self,
               model_name='verify_68',
@@ -188,10 +191,12 @@ class WeightBasedTripleLoss(nn.Module):
         super(WeightBasedTripleLoss, self).__init__()
         self.sampling_layer = WeightSamplingLayer(batch_k)
 
+
     def forward(self, x):
         a_s, p_s, n_s = self.sampling_layer(x)
         loss = F.triplet_margin_loss(anchor=a_s, positive=p_s, negative=n_s)
         return loss
+
 
 
 class WeightSamplingLayer:
@@ -211,6 +216,9 @@ class WeightSamplingLayer:
         """
         # L2Normalize
         init_vectors = x
+        x = torch.Tensor(x.cpu())
+        x = x.detach()
+        x = x.double()
         x = WeightSamplingLayer.L2Normalize(x)
         self.n, self.d = x.shape
         # calculate distance
@@ -220,7 +228,6 @@ class WeightSamplingLayer:
         # execute sampling
         return self.sampling(init_vectors, weights)
         # return triplets
-
     @staticmethod
     def L2Normalize(data):
         data = data.numpy()
@@ -249,16 +256,24 @@ class WeightSamplingLayer:
 
     def calculate_weight(self, distance):
         distance = distance.numpy()
-        log_weights = ((2.0 - float(self.d)) * np.log(distance)
-                       - (float(self.d - 3) / 2) * np.log(1.0 - 0.25 * (distance ** 2.0)))
+        distance = np.maximum(distance, self.maximum_cutoff)
+        # print("distance %s" % str(distance))
+        first_term = (2.0 - float(self.d)) * np.log(distance)
+        second_term = (float(self.d - 3) / 2) * np.log(1.0 - 0.25 * (distance ** 2.0))
+        # print('first term %s' % str(first_term))
+        # print('second term %s' % str(second_term))
+
+        log_weights = first_term - second_term
+
         # use formula trans get the distribution score, according that score we use it as
         # the simulating distribution for sample the (a, p, n) triplet
         # print("log_weights %s" % str(log_weights))
 
-        weights = np.exp(log_weights - np.max(log_weights))
+        weights = np.exp(log_weights)
         # use the softmax-like exp transform the score to the probabilities
         # Sample only negative examples by setting weights of
         # the same-class examples to 0.
+
 
         mask = np.ones(weights.shape)
         k = self.k
@@ -268,6 +283,7 @@ class WeightSamplingLayer:
         weights = weights * np.array(mask) * (distance < self.nonzero_loss_cutoff)
         # mapping the mask to the matrix
         weights = weights / np.sum(weights, axis=1, keepdims=True)  # normalize
+        # print("weights normed\n%s" % str(weights))
         return weights
 
     def sampling(self, vectors, weights):
@@ -278,7 +294,6 @@ class WeightSamplingLayer:
         # the select method according to the weight based probabilities.
 
         n = len(vectors)
-        print(n)
         for i in range(len(vectors)):
             block_idx = i // self.k  # which block that this data belong
 
@@ -291,33 +306,8 @@ class WeightSamplingLayer:
                     a_indices.append(i)
                     p_indices.append(j)
 
-        # print("p_indices \n%s" % str(p_indices))
-        # print("n_indices \n%s" % str(n_indices))
-        # print('a_indices \n%s' % str(a_indices))
+        # print("p_indices \n%s" % str(p_indices[:100]))
+        # print("n_indices \n%s" % str(n_indices[:100]))
+        # print('a_indices \n%s' % str(a_indices[:100]))
+        # print(vectors)
         return vectors[a_indices], vectors[p_indices], vectors[n_indices]
-
-
-'''
-import algorithm_models.verify_model as vm
-from weight_based_sampling_demo import model as wm
-import torch
-import  numpy as np
-import mxnet as mx
-import mxnet.ndarray as nd
-arr = torch.from_numpy(np.array([[1.,1.,1.,],
-                                 [2.,2.,2.,],
-                                 [3.,3.,3.,],
-                                 [1.,2.,3.],
-                                 [2.1,1.1,2.3],
-                                 [1,2,2.1],
-                                 [1.4,2.1,.6],
-                                 [1.4,2.4,1.],
-                                 [1.6,.9,1.],
-                                 [1.44,2.1,.98],
-                                 [.88,1.1,1.777],
-                                 [.4,.9,1.1]])).double()
-arr_mx = nd.array(arr)
-vm.L2Normalize(arr)
-wsl = wm.MarginSampler(3)
-my_wsl = vm.WeightSamplingLayer(3)
-'''

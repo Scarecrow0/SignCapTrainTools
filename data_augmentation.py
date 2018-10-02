@@ -1,6 +1,5 @@
 import os
 import pickle
-from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,6 +15,7 @@ import process_data_dev
 3 时间上的scaling
     加大或者降低某些值的变化速度 
 """
+
 
 class DataAugment:
     def __init__(self):
@@ -42,12 +42,14 @@ class DataAugment:
 
         return augmented_data
 
+
 """
 data format:
-    
+
 """
 
-def load_train_data(sign_id, date, batch_range):
+
+def load_train_data(sign_id, date, data_dir, batch_range):
     """
     load dedicate date captured data
     format as {
@@ -62,14 +64,16 @@ def load_train_data(sign_id, date, batch_range):
     }
     :param sign_id: which sigh gonna load
     :param date: capture date
+    :param data_dir: where to load
     :param batch_range: the range of batch of this data
     :return: if doesn't find the target sign data, will return None
     """
     overall_data = None
     for each_date in date:
-        data_path = os.path.join('cleaned_data', each_date)
+        data_path = os.path.join(data_dir, each_date)
         for batch in batch_range:
             batch = int(batch)
+            # print(data_path)
             curr_batch_data = process_data_dev.load_train_data(sign_id, batch, data_path, verbose=False)
             if len(curr_batch_data['acc']) == 0:
                 continue
@@ -79,6 +83,7 @@ def load_train_data(sign_id, date, batch_range):
                 for each_type in curr_batch_data.keys():
                     overall_data[each_type] = np.vstack((overall_data[each_type], curr_batch_data[each_type]))
     return overall_data
+
 
 def draw_box_plt(data):
     """
@@ -113,8 +118,8 @@ def draw_box_plt(data):
             mid_point = mean
             if each_type != 'emg':
                 bound_rate = 1.5
-                lower_bound = median - (rd_med - st_med) * bound_rate
-                upper_bound = median + (rd_med - st_med) * bound_rate
+                lower_bound = mid_point - (rd_med - st_med) * bound_rate
+                upper_bound = mid_point + (rd_med - st_med) * bound_rate
             else:
                 bound_rate = 3.5
                 lower_bound = mid_point - (rd_med - st_med) * bound_rate
@@ -127,6 +132,7 @@ def draw_box_plt(data):
             plt.plot(lower_bound)
             plt.plot(upper_bound)
     plt.show()
+
 
 def draw_plot(data):
     for each_type in ['acc', 'gyr']:
@@ -143,7 +149,7 @@ DATA_DIR_PATH = os.path.join(os.getcwd(), 'data')
 from process_data_dev import GESTURES_TABLE
 
 
-def data_distribution_statistics():
+def data_distribution_statistics(save_to_file=False):
     """
     calculate data distribution by box plot method
     the result will save as following format
@@ -168,122 +174,79 @@ def data_distribution_statistics():
         },....
     }
 
+    :param save_to_file:
     :return:
     """
-
-    task_list = []
-    target_dir = os.path.join(DATA_DIR_PATH, 'cleaned_data')
-    for each_sign in range(0, 2):
+    distributions = {}
+    for each_sign in range(len(GESTURES_TABLE)):
         print("processing sign %d %s" % (each_sign + 1, GESTURES_TABLE[each_sign]))
         each_sign += 1
-
-        date_list = os.listdir(target_dir)
+        distributions[each_sign] = {}
+        overall_data = {
+            'acc': [None, None, None],
+            'gyr': [None, None, None],
+            'emg': [None for i in range(8)]
+        }
+        date_list = os.listdir(os.path.join(DATA_DIR_PATH, SOURCE_DATA_DIR))
         for each_date in date_list:
-            batch_list = os.listdir(os.path.join(target_dir, each_date))
-            batch_list = map(lambda x: int(x), batch_list)
-
+            batch_list = os.listdir(os.path.join(DATA_DIR_PATH, SOURCE_DATA_DIR, each_date))
             batch_list = sorted(batch_list)
-            for each_batch in batch_list:
-                task_list.append((each_batch, each_date, each_sign))
-
-    p = Pool(5)
-    distributions = p.map(get_distribution_single, task_list)
-    tmp = {}
-    for each in distributions:
-        if each is None:
+            data = load_train_data(each_sign, [each_date], batch_list)
+            if data is None:
+                continue
+            for each_type in ['acc', 'gyr', 'emg']:
+                dim_range = 3
+                if each_type == 'emg':
+                    dim_range = 8
+                for each_cap in data[each_type]:
+                    each_cap = each_cap.T
+                    for each_dim in range(dim_range):
+                        if overall_data[each_type][each_dim] is None:
+                            overall_data[each_type][each_dim] = each_cap[each_dim]
+                        else:
+                            overall_data[each_type][each_dim] = np.vstack(
+                                (overall_data[each_type][each_dim], each_cap[each_dim]))
+                    if each_type == 'emg':
+                        overall_data[each_type] = [np.abs(each_dim_data) for each_dim_data in overall_data[each_type]]
+        if overall_data['acc'][0] is None:
             continue
-        if tmp.get(each[2]) is None:
-            tmp[each[2]] = [each]
-        else:
-            tmp[each[2]].append(each)
-    distributions = tmp
-    return distributions
 
-
-def get_distribution_single(task_args):
-    batch_num = task_args[0]
-    date = task_args[1]
-    sign_id = task_args[2]
-
-    data_path = os.path.join('resort_data', date)
-    data = process_data_dev.load_train_data(sign_id=sign_id,
-                                            batch_num=batch_num,
-                                            data_path=data_path)
-    distributions = cal_distribution(data)
-    return date, batch_num, sign_id, distributions
-
-
-def cal_distribution(data):
-    overall_data = {
-        'acc': [None, None, None],
-        'gyr': [None, None, None],
-    }
-    default_threshold = {
-        'acc': 0.37,
-        'gyr': 75
-    }
-    if len(data['acc']) == 0:
-        return None
-
-    for each_type in ['acc', 'gyr']:
-        dim_range = 3
-        for each_cap in data[each_type]:
-            each_cap = each_cap.T
-            for each_dim in range(dim_range):
-                if overall_data[each_type][each_dim] is None:
-                    overall_data[each_type][each_dim] = each_cap[each_dim]
-                else:
-                    overall_data[each_type][each_dim] = \
-                        np.vstack((overall_data[each_type][each_dim], each_cap[each_dim]))
-    distributions = {}
-    total_failed_cnt = 0
-    for each_type in ['acc', 'gyr']:
-        distribution_data = []
-        for each_dim in range(3):
-            median = np.mean(overall_data[each_type][each_dim], axis=0)
-
-            max_val = np.percentile(overall_data[each_type][each_dim], q=90, axis=0)
-            min_val = np.percentile(overall_data[each_type][each_dim], q=15, axis=0)
-            threshold_val = np.concatenate((median - min_val, max_val - median))
-            threshold_val = np.mean(threshold_val)
-            threshold_val = default_threshold[each_type] if threshold_val > default_threshold[
-                each_type] else threshold_val
-            print(threshold_val)
-
-            st_pos = np.percentile(overall_data[each_type][each_dim], q=25, axis=0)
-            rd_pos = np.percentile(overall_data[each_type][each_dim], q=75, axis=0)
-            st_med_d = median - st_pos
-            rd_med_d = rd_pos - median
-            failed_cnt = 0
-            for each_judge in (st_med_d, rd_med_d):
-                book = np.where(each_judge > threshold_val, 1, 0)
-                try:
-                    outlier_cnt = np.count_nonzero(book[16:144])
-                except IndexError:
-                    distributions['judge_res'] = False
-                    return distributions
-                if outlier_cnt > 24:
-                    failed_cnt += 1
-            if failed_cnt > 0:
-                is_failed = True
+        print("load data done")
+        for each_type in ['acc', 'gyr', 'emg']:
+            if each_type == 'emg':
+                dim_range = 8
             else:
-                is_failed = False
+                dim_range = 3
 
-            distribution_data.append({
-                'st_med_d': median - st_pos,
-                'rd_med_d': rd_pos - median,
-                'failed': is_failed
-            })
+            distributions[each_sign][each_type] = []
+            for each_dim in range(dim_range):
+                median = np.median(overall_data[each_type][each_dim], axis=0)
+                st_med = np.percentile(overall_data[each_type][each_dim], q=25, axis=0)
+                # 求百分位数 ，箱型图分别用的是75 和25
+                rd_med = np.percentile(overall_data[each_type][each_dim], q=75, axis=0)
 
-            if is_failed:
-                total_failed_cnt += 1
+                if each_type != 'emg':
+                    bound_rate = 1.5
+                    lower_bound = median - (rd_med - st_med) * bound_rate
+                    upper_bound = median + (rd_med - st_med) * bound_rate
+                else:
+                    bound_rate = 3.5
+                    lower_bound = st_med - (rd_med - st_med) * bound_rate
+                    upper_bound = rd_med + (rd_med - st_med) * bound_rate
 
-        distributions[each_type] = distribution_data
+                distributions[each_sign][each_type].append({
+                    'mean': median,
+                    'st_med': st_med,
+                    'rd_med': rd_med,
+                    'lower_bound': lower_bound,
+                    'upper_bound': upper_bound,
+                })
+        print("boxplot computation completed")
 
-    if total_failed_cnt >= 3:
-        distributions['judge_res'] = False
-    else:
-        distributions['judge_res'] = True
+    if save_to_file:
+        with open(os.path.join(DATA_DIR_PATH, 'data_distributions.dat'), 'wb') as f:
+            pickle.dump(distributions, f)
+
     return distributions
 
 
@@ -296,7 +259,7 @@ def data_clean(sign_id, data_batch):
     :return:
     """
     if not os.path.exists(os.path.join(DATA_DIR_PATH, 'data_distributions.dat')):
-        data_distribution_statistics()
+        data_distribution_statistics(True)
     with open(os.path.join(DATA_DIR_PATH, 'data_distributions.dat'), 'r+b') as f:
         data_distribution = pickle.load(f)
 
@@ -324,10 +287,10 @@ def data_clean(sign_id, data_batch):
                                 book,
                                 cap_dim_data)
                 outlier_cnt = np.count_nonzero(book[16:144])
-                if outlier_cnt > 40:
+                if outlier_cnt > 50:
                     outlier_dim_cnt += 1
             if outlier_dim_cnt >= 1:
-                need_remove = True
+                #               need_remove = True
                 break
 
         if not need_remove:
@@ -350,32 +313,59 @@ def read_gesture_table():
     f.close()
     pass
 
+
+from multiprocessing import Pool
+
+
+def load_and_clean_data(each_sign):
+    date_list = each_sign[1]
+    each_sign = each_sign[0] + 1
+    print('cleaning sign: %d' % each_sign)
+    data = load_train_data(sign_id=each_sign,
+                           date=date_list,
+                           batch_range=range(1, 999),
+                           data_dir=SOURCE_DATA_DIR)
+    sign_cnt = 0
+    sign_cnt_cleaned = 0
+    cleaned_data = {
+        'acc': [],
+        'gyr': [],
+        'emg': []
+    }
+
+    if data is not None:
+        sign_cnt = len(data['acc'])
+        # cleaned_data = data_clean(each_sign, data)
+        cleaned_data = data
+        sign_cnt_cleaned = len(cleaned_data['acc'])
+
+    return sign_cnt, sign_cnt_cleaned, cleaned_data, each_sign
+
+
 def clean_all_data(date_list=None):
+    data_dir = os.path.join(DATA_DIR_PATH, SOURCE_DATA_DIR)
+    print(data_dir)
     if date_list is None:
-        date_list = os.listdir(os.path.join(DATA_DIR_PATH, 'resort_data'))
-    cleaned_data = []
+        date_list = os.listdir(data_dir)
+    print(date_list)
+    arg_list = []
+    for each_sign in range(len(GESTURES_TABLE)):
+        arg_list.append((each_sign, date_list))
+    p = Pool(25)
+    res = p.map(load_and_clean_data, arg_list)
+
     sign_cnt = []
     sign_cnt_cleaned = []
-    for each_sign in range(len(GESTURES_TABLE)):
-        each_sign += 1
-        data = load_train_data(sign_id=each_sign,
-                               date=date_list,
-                               batch_range=range(1, 99))
-        if data is None:
-            sign_cnt.append(0)
-            sign_cnt_cleaned.append(0)
-            cleaned_data.append({
-                'acc': [],
-                'gyr': [],
-                'emg': []
-            })
-            continue
-        sign_cnt.append(len(data['acc']))
-        data = data_clean(each_sign, data)
-        cleaned_data.append(data)
-        sign_cnt_cleaned.append(len(data['acc']))
+    cleaned_data = []
+    for each in res:
+        sign_cnt.append(each[0])
+        sign_cnt_cleaned.append(each[1])
+        cleaned_data.append(each[2])
+
+    # sign id start from 0
     with open(os.path.join(DATA_DIR_PATH, 'cleaned_data.dat'), 'w+b') as f:
         pickle.dump(cleaned_data, f)
+
     print('after clean')
     all_cnt = 0
     all_cnt_clean = 0
@@ -391,27 +381,23 @@ def clean_all_data(date_list=None):
 
 def load_data(sign_id, date_list=None):
     if date_list is None:
-        date_list = os.listdir(os.path.join(DATA_DIR_PATH, 'cleaned_data'))
+        date_list = os.listdir(os.path.join(DATA_DIR_PATH, SOURCE_DATA_DIR))
     # date_list = ['0811-2']
     # date_list.remove('0812-1')
-    # print(date_list)
-    data = load_train_data(sign_id=sign_id, date=date_list, batch_range=range(1, 99))
+    data = load_train_data(sign_id=sign_id,
+                           date=date_list,
+                           batch_range=range(1, 99),
+                           data_dir=SOURCE_DATA_DIR)
     return data
 
 
-def show_data_distribution(distribution):
-    for each_sign in distribution.keys():
-        for each_type in ['acc', 'gyr']:
-            for each_dim in range(3):
-                for each_val in ['st_med_d', 'rd_med_d', ]:
-                    plt.figure()
-                    for each_batch in distribution[each_sign]:
-                        data = each_batch[-1][each_type][each_dim][each_val]
-                        plt.title('sign %d %s %d %s' % (each_sign, each_type, each_dim, each_val))
-                        plt.plot(range(len(data)), data, )
-        plt.show()
-
-
+def show_data_distribution(sign_id):
+    data = load_data(sign_id)
+    if data is None:
+        print('data count is 0')
+        return
+    # draw_plot(data)
+    draw_box_plt(data)
 
 
 def clean_data_test(sign_id):
@@ -420,23 +406,26 @@ def clean_data_test(sign_id):
         print('data count is 0')
         return
     # data_distribution_statistics(True)
-    draw_box_plt(data)
     data = data_clean(sign_id=sign_id, data_batch=data)
+    draw_box_plt(data)
     draw_plot(data)
 
+
+SOURCE_DATA_DIR = 'resort_data'
+
+
 def main():
+    pass
     # read_gesture_table()
     # 存在离群点密集 batch 20    25
-    distribution = data_distribution_statistics()
-    # clean_all_data()
-    # clean_data_test(31)
-    show_data_distribution(distribution)
+    # data_distribution_statistics(True)
+    clean_all_data()
+    # clean_data_test(28)
+    # show_data_distribution(13)
     # clean_data_test(58)
-    # data = load_train_data(sign_id=1,
-    #                        batch_range=range(99),
-    #                        date=['0810-2'])
+    # data = load_data(sign_id=28)
     # draw_box_plt(data)
-    # draw_plot(data)
-    pass
+
+
 if __name__ == '__main__':
     main()

@@ -1,5 +1,6 @@
 # coding:utf-8
 # py3
+import json
 import os
 import pickle
 import random
@@ -649,7 +650,6 @@ def print_train_data(sign_id,
     :param for_cnn
     """
     if capture_date is not None:
-        # data_path = os.path.join('resort_data', capture_date)
         data_path = os.path.join(data_path, capture_date)
 
     data_set = load_train_data(sign_id=sign_id,
@@ -662,14 +662,10 @@ def print_train_data(sign_id,
 
     global scaler
     to_scale_data = data_set[data_feat_type]
-    if for_cnn:
-        scale_type_name = 'cnn_%s' % data_cap_type
-    else:
-        scale_type_name = 'rnn_%s_%s' % (data_cap_type, data_feat_type)
-
-    # if data_feat_type != 'raw' and data_feat_type != 'trans':
-    #     for each in range(len(to_scale_data)):
-    #         to_scale_data[each] = scaler.normalize(to_scale_data[each], scale_type_name)
+    scale_type_name = 'minmax'
+    if data_feat_type != 'raw':
+        for each in range(len(to_scale_data)):
+            to_scale_data[each] = scaler.normalize(to_scale_data[each], scale_type_name, data_cap_type)
 
     generate_plot(data_set, data_cap_type, data_feat_type)
     plt.show()
@@ -1026,6 +1022,84 @@ def merge_old_data():
                 shutil.copyfile(old_path, target_path)
 
 
+def generate_sentence_table():
+    with open(os.path.join(DATA_DIR_PATH, "sign_sentences.txt"), 'r', encoding='utf8') as f:
+        contents = f.readlines()
+
+    new_content = []
+    word_id_assign = {}
+    for value in contents:
+        splited_words = value.split('/')
+        keys = []
+        new_val = ''
+        for each_word in splited_words:
+            each_word = each_word.strip("\n")
+            new_val += each_word
+            each_word = each_word.strip('？')
+            keys.append(each_word)
+        new_content.append({
+            'value': new_val,
+            'keys': keys
+        })
+    print(json.dumps(new_content))
+
+
+def main():
+    generate_sentence_table()
+    # 从feedback文件获取数据
+    # data_set = load_feed_back_data()[sign_id]
+
+    # resort_data(['0817-*',])
+    # res = statistics_data('resort_data')
+    # print_train_data(sign_id=28,
+    #                  batch_num=17,
+    #                  data_cap_type='emg',  # 数据采集类型 emg acc gyr
+    #                  data_feat_type='trans',  # 数据特征类型 zc rms arc trans(emg) poly_fit(cnn)
+    #                  capture_date='0813-1',
+    #                  data_path='cleaned_data',
+    #                  for_cnn=False)  # cnn数据是128长度  db4 4层变换 普通的则是 160 db3 5
+
+    # 输出上次处理过的数据的scale
+    # print_scale('acc', 'all')
+    # pickle_train_data_new()
+
+    # 将采集数据转换为输入训练程序的数据格式
+    # pickle_train_data(batch_num=87)
+    # pickle_train_data_new()
+
+    # 生成验证模型的参照系向量
+    # generate_verify_vector('rnn')
+    # generate_verify_vector('cnn')
+
+    # 从recognized data history中取得数据
+    # online_data = load_online_processed_data()
+
+    # plot 原始采集的数据
+    # print_raw_capture_data()
+
+    # 从 raw data history中获得data 并处理成能够直接输入到cnn的形式
+    # raw_capture_data = load_raw_capture_data()
+    # online_data = process_raw_capture_data(load_raw_capture_data(), for_cnn=True)
+    # plt.figure("111")
+    # plt.plot(range(len(raw_capture_data['emg'])), raw_capture_data['emg'], '.-', )
+    # plt.show()
+
+    # online data is a tuple(data_single, data_overall)
+    # processed_data = split_online_processed_data(online_data)
+    # print_processed_online_data(processed_data,
+    #                             cap_type='emg',
+    #                             feat_type='trans',  # arc zc rms trans  cnn_raw cnn的输入
+    #                             overall=True,
+    #                             block_cnt=6)
+    pass
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
 '''
 sign 1 朋友, cnt 839, occ pos ['0810-2 13', '0810-2 15', '0810-2 16', '0810-2 21', '0810-2 22', '0810-2 23', '0810-2 24', '0810-2 25', '0811-1 1', '0811-1 15', '0811-1 17', '0811-1 2', '0811-1 9', '0811-2 18', '0811-2 2', '0811-2 22', '0811-2 4', '0811-2 5', '0812-1 22', '0812-1 26', '0831-2 12', '0831-2 13', '0831-2 14', '0831-2 15', '0831-2 16', '0831-2 4', '0831-2 55', '0831-2 57', '0831-2 58', '0831-2 59', '0831-2 6', '0831-2 60', '0831-2 61', '0831-2 62', '0831-2 63', '0831-2 64', '0831-2 65', '0831-2 66', '0831-2 7', '0831-2 8', '0831-2 9']
 sign 2 下午, cnt 996, occ pos ['0810-2 12', '0810-2 13', '0810-2 14', '0810-2 15', '0810-2 16', '0810-2 21', '0810-2 22', '0810-2 23', '0810-2 24', '0810-2 25', '0811-1 1', '0811-1 15', '0811-1 17', '0811-1 18', '0811-1 19', '0811-1 9', '0811-2 18', '0811-2 22', '0811-2 23', '0811-2 24', '0811-2 26', '0811-2 27', '0811-2 3', '0811-2 4', '0811-2 5', '0811-2 9', '0812-1 21', '0812-1 22', '0812-1 26', '0812-1 27', '0812-1 28', '0812-1 29', '0813-1 1', '0813-1 2', '0813-1 3', '0813-2 10', '0813-2 11', '0813-2 4', '0813-2 6', '0813-2 7', '0813-2 8', '0813-2 9', '0813-3 1', '0813-3 3', '0813-3 4', '0813-3 5', '0813-3 6', '0813-3 7', '0813-3 8']
@@ -1098,59 +1172,3 @@ sign 68 北京, cnt 587, occ pos ['0816-1 137', '0816-1 138', '0816-1 139', '081
 sign 69 世界, cnt 522, occ pos ['0816-2 1', '0816-2 16', '0816-2 2', '0816-2 42', '0817-2 110', '0817-2 114', '0817-2 115', '0817-2 116', '0817-2 118', '0817-2 119', '0817-3 49', '0817-3 50', '0817-3 51', '0817-3 52', '0817-3 54', '0817-3 55', '0817-3 56', '0817-3 57', '0817-3 58', '0817-3 59', '0817-3 60', '0817-3 62', '0904-1 333', '0904-1 334', '0904-1 335']
 
 '''
-
-def main():
-    # merge_old_data()
-
-    # 从feedback文件获取数据
-    # data_set = load_feed_back_data()[sign_id]
-
-    # resort_data(['0817-*',])
-    # res = statistics_data('resort_data')
-    print_train_data(sign_id=27,
-                     batch_num=20,
-                     data_cap_type='acc',  # 数据采集类型 emg acc gyr
-                     data_feat_type='poly_fit',  # 数据特征类型 zc rms arc trans(emg) poly_fit(cnn)
-                     capture_date='0815-1',
-                     data_path='resort_data',
-                     for_cnn=True)  # cnn数据是128长度  db4 4层变换 普通的则是 160 db3 5
-
-    # 输出上次处理过的数据的scale
-    # print_scale('acc', 'all')
-    # pickle_train_data_new()
-
-    # 将采集数据转换为输入训练程序的数据格式
-    # pickle_train_data(batch_num=87)
-    pickle_train_data_new()
-
-    # 生成验证模型的参照系向量
-    # generate_verify_vector('rnn')
-    # generate_verify_vector('cnn')
-
-    # 从recognized data history中取得数据
-    # online_data = load_online_processed_data()
-
-    # plot 原始采集的数据
-    # print_raw_capture_data()
-
-    # 从 raw data history中获得data 并处理成能够直接输入到cnn的形式
-    # raw_capture_data = load_raw_capture_data()
-    # online_data = process_raw_capture_data(load_raw_capture_data(), for_cnn=True)
-    # plt.figure("111")
-    # plt.plot(range(len(raw_capture_data['emg'])), raw_capture_data['emg'], '.-', )
-    # plt.show()
-
-    # 识别能力测试
-    # cnn_recognize_test(online_data)
-
-    # online data is a tuple(data_single, data_overall)
-    # processed_data = split_online_processed_data(online_data)
-    # print_processed_online_data(processed_data,
-    #                             cap_type='emg',
-    #                             feat_type='trans',  # arc zc rms trans  cnn_raw cnn的输入
-    #                             overall=True,
-    #                             block_cnt=6)
-
-
-if __name__ == "__main__":
-    main()

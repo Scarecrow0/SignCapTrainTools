@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from algorithm_models.CNN_model import CNN
+from algorithm_models.classify_model import CNN
 from algorithm_models.verify_model import SiameseNetwork
 from process_data_dev import DATA_DIR_PATH
 
