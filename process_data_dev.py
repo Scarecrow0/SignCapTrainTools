@@ -50,6 +50,21 @@ GESTURES_TABLE = ['朋友', '下午', '天', '早上', '上午', '中午', '谢�
                   '支持', '我们', '医生', '帮助', '聋哑人', '', '充电', '寄存', '中国', '辽宁', '北京',
                   '世界']
 
+GESTURES_TABLE_EN = [u'Friend', u'Afternoon', u'Day', u' Morning', u'A.M.', u'Noon', u'Thank you', u'Sorry',
+                     u'Doesn\'t matter', u'Yesterday', u'Today', u'Tomorrow', u'Home', u'Back', u'Go', u'Late',
+                     u'Communication', u'Contact', u'You', u'What', u'Think', u'I', u'Airport', u' Evening',
+                     u'Bathroom',
+                     u'Return', u'Ticket', u'Anxious', u'How', u'Do', u'Baggage', u'Can', u'Consignment', U'Time',
+                     u'Take off', u'Missed', u'Change sign', u'Flight', u'Deferred', u'Ask ', u'How to go', u'Where',
+                     u'Find ', u'Less', u'Confiscate', u'Why', u' Terminal building', u'Ticket Counter',
+                     u'Ticket Entrance',
+                     u'Id Card', u'Watch', u'Keys', u'Cigarette', u'Knife', u'Lighter', u'Shenyang', u'Everyone',
+                     U'Support',
+                     u'We', u'Doctor', u'Help', u'Deaf people', u'', u'Charge', u'Host', u'China', u'Liaoning',
+                     u'Beijing',
+                     u'World']
+
+
 SIGN_COUNT = len(GESTURES_TABLE)
 
 
@@ -1023,34 +1038,40 @@ def merge_old_data():
 
 
 def generate_sentence_table():
-    with open(os.path.join(DATA_DIR_PATH, "sign_sentences.txt"), 'r', encoding='utf8') as f:
-        contents = f.readlines()
+    material = os.path.join(DATA_DIR_PATH, 'sign_sentences_text')
+    with open(os.path.join(material, "sentences_splt_en.txt"), 'r', encoding='utf8') as f:
+        contents_splt = f.readlines()
+    with open(os.path.join(material, "sentences_nonsplt_en.txt"), 'r', encoding='utf8') as f:
+        contents_non_splt = f.readlines()
+    for i in range(len(GESTURES_TABLE)):
+        print("%s %s" % (GESTURES_TABLE[i], GESTURES_TABLE_EN[i]))
 
     new_content = []
-    word_id_assign = {}
-    for value in contents:
-        splited_words = value.split('/')
+    for i in range(len(contents_splt)):
+        splited_words = contents_splt[i].split('/')
         keys = []
-        new_val = ''
+        new_val = contents_non_splt[i]
         for each_word in splited_words:
             each_word = each_word.strip("\n")
-            new_val += each_word
-            each_word = each_word.strip('？')
+            each_word = each_word.strip('?')
             keys.append(each_word)
         new_content.append({
-            'value': new_val,
+            'value': new_val.strip('\n'),
             'keys': keys
         })
+    # with open(os.path.join(material, "sentences_nonsplt_cn.txt"), 'w', encoding='utf8') as f:
+    #     f.writelines(non_splt_sentences)
+
     print(json.dumps(new_content))
 
 
 def main():
-    generate_sentence_table()
+    # generate_sentence_table()
     # 从feedback文件获取数据
     # data_set = load_feed_back_data()[sign_id]
 
     # resort_data(['0817-*',])
-    # res = statistics_data('resort_data')
+    res = statistics_data('cleaned_data')
     # print_train_data(sign_id=28,
     #                  batch_num=17,
     #                  data_cap_type='emg',  # 数据采集类型 emg acc gyr

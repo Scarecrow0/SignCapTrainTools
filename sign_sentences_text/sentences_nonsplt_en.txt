@@ -1,0 +1,58 @@
+where is the toilet?
+Where is the terminal building?
+Where is the ticket counter?
+Where is the ticket entrance?
+Where is the security check?
+How can I get the security check?
+Where is the boarding gate?
+What should I do if the ticket cannot be found?
+What should I do if I miss my flight?
+What should I do if the flight is delayed?
+How long is the flight delayed?
+Where can I get my baggage check-in?
+How can I get my baggage checked?
+What should I do if my checked baggage is overweight?
+What items in baggage can't been checked?
+What material do I need for check-in?
+What documents do I need for boarding?
+What should I do if my ID card cannot be found?
+How can I change my flight?
+How can I refund my ticket?
+Why did you confiscate my lighter?
+Why did you confiscate my perfume?
+Why did you confiscate my water drink?
+Why is the portable charger can not been checked?
+Why can't cosmetics be taken on board?
+What is the limit for checked baggage weight?
+Why is the boarding gate changed?
+How can I choose my sate on the plane?
+Where should I go after I passed the boarding gate?
+I want to reserve a tomorrow’s flight from Shenyang to Beijing
+I want to reserve a today’s flight from Shenyang to Beijing
+I want to reserve a tomorrow’s flight from Shenyang to Beijing
+I want to reserve a today’s flight from Shenyang to Beijing
+I want to reserve a today’s flight from Shenyang to Beijing flight in the A.M.
+I want to reserve a today’s flight from Shenyang to Beijing flight in the afternoon.
+I want to reserve a today’s flight from Shenyang to Beijing flight in the morning.
+I want to reserve a today’s flight from Shenyang to Beijing flight at night.
+I want to reserve a today’s flight from Shenyang to Beijing flight in the A.M.
+I want to reserve a today’s flight from Shenyang to Beijing flight in the afternoon.
+I want to reserve a today’s flight from Shenyang to Beijing flight in the morning.
+I want to reserve a today’s flight from Shenyang to Beijing flight at night.
+What should I do if I want to buy a ticket back to Shenyang?
+What should I do if I want to buy a ticket back to Liaoning?
+What should I do if I want to buy a ticket back to Beijing?
+What should I do if I want to buy a ticket go to Shenyang?
+What should I do if I want to buy a ticket go to Liaoning?
+What should I do if I want to buy a ticket go to Beijing?
+What should I do if I want to get my luggage check-in?
+Where can I charge my phone?
+What should I do if I can't find my friend?
+Sorry to bother.
+Sorry, I am deaf people and I need your help.
+It doesn't matter, you can ask the staff.
+It doesn't matter if you can communicate with me with "Say Your Voice"
+What should I do if I am late for my flight?
+What should I do if I miss the departure time?
+My home is in Shenyang, Liaoning.
+When is the departure time of flight has been changed to?

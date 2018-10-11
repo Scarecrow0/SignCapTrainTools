@@ -1,0 +1,58 @@
+Ask/Toilet/How/Go
+Ask/Terminal building/Where
+Ask/Ticket Counter/Where
+Ask/Ticket Entrance/Where
+Ask/Where/Security Check
+Ask/How/Security Check
+Ask/Abrading Entrance/Where
+Ask/Ticket/Find/Not/How/Do
+Ask/Missed/Mine/Flight/How/Do
+Ask/Flight/Delay/How/Do
+Ask/Flight/Delay/How long
+Ask/Where/Consignment/baggage
+Ask/How/Do/baggage/Consignment
+Ask/How/Do/Consignment/Baggage/Over/Weight
+Ask/What/Can/Not/Consignment
+Ask/Get/Ticket/What
+Ask/Aboard/What/ID card
+Ask/Id Card/Find/How/Do
+Ask/Flight/How/Change sign
+Ask/How/Back/Ticket
+Ask/Why/Confiscate/Mine/Lighter
+Ask/Why/Confiscate/Mine/Perfume
+Ask/Why/Confiscate/Mine/Drinks
+Ask/Why/Confiscate/Portable/Can Not/Consignment
+Ask/cosmetics/Why/Can/Take/Plane
+Ask/Consignment/baggage/Weight/Limit/What
+Ask/Abrading Entrance/Why/Change
+Ask/Plane/How/Choose/Seat
+Ask/Pass/Abrading Entrance/After/How/Go
+Ticket/Tomorrow/Go/Shenyang/Beijing
+Ticket/Today/Go/Shenyang/Beijing
+flight/Tomorrow/Go/Shenyang/Beijing
+flight/Today/Go/Shenyang/Beijing
+Ticket/Today/A.M/Go/Shenyang/Beijing
+Ticket/Today/afternoon/Go/Shenyang/Beijing
+Ticket/Today/morning/Go/Shenyang/Beijing
+Ticket/Today/night/Go/Shenyang/Beijing
+Flight/Today/A.M/Go/Shenyang/Beijing
+Flight/Today/afternoon/Go/Shenyang/Beijing
+Flight/Today/morning/Go/Shenyang/Beijing
+Flight/Today/night/Go/Shenyang/Beijing
+Ask/Ticket/Back/Shenyang
+Ask/Ticket/Back/Liaoning
+Ask/Ticket/Back/Beijing
+Ask/Ticket/Go/Shenyang
+Ask/Ticket/Go/Liaoning
+Ask/Ticket/Go/Beijing
+Ask/baggage/consignment
+Ask/Where/charging
+Ask/find/less/friend
+Sorry
+Sorry/deaf people/help
+Doesn't matter/Ask
+Doesn't matter/communication/I
+Ask/late/flight
+Ask/missed/flight
+Home/Shenyang/Liaoning
+Ask/flight/time

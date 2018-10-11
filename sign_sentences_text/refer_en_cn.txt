@@ -1,0 +1,69 @@
+朋友 Friend
+下午 Afternoon
+天 Day
+早上  Morning
+上午 A.M.
+中午 Noon
+谢谢 Thank you
+对不起 Sorry
+没关系 Doesn't matter
+昨天 Yesterday
+今天 Today
+明天 Tomorrow
+家 Home
+回 Back
+去 Go
+迟到 Late
+交流 Communication
+联系 Contact
+你 You
+什么 What
+想 Think
+我 I
+机场 Airport
+晚上  Evening
+卫生间 Bathroom
+退 Return
+机票 Ticket
+着急 Anxious
+怎么 How
+办 Do
+行李 Baggage
+可以 Can
+托运 Consignment
+起飞 Time
+时间 Take off
+错过 Missed
+改签 Change sign
+航班 Flight
+延期 Deferred
+请问 Ask
+怎么走 How to go
+在哪里 Where
+找 Find
+不到 Less
+没收 Confiscate
+为什么 Why
+航站楼  Terminal building
+取票口 Ticket Counter
+检票口 Ticket Entrance
+身份证 Id Card
+手表 Watch
+钥匙 Keys
+香烟 Cigarette
+刀 Knife
+打火机 Lighter
+沈阳 Shenyang
+大家 Everyone
+支持 Support
+我们 We
+医生 Doctor
+帮助 Help
+聋哑人 Deaf people
+
+充电 Charge
+寄存 Host
+中国 China
+辽宁 Liaoning
+北京 Beijing
+世界 Worldd

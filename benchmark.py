@@ -44,10 +44,10 @@ class Benchmark:
         inference_res = self.classify_m(test_data)
         inference_res = torch.nn.functional.softmax(inference_res, dim=1)
         # print('raw output %s' % str(inference_res))
-        inference_res = get_max_index(inference_res).item()
-        print('inference label %s' % str(inference_res))
+        inference_res = get_max_index(inference_res)
+        print('inference label %s, probable %s' % (str(inference_res[0]), str(inference_res[1])))
         verify_vector = self.verify_m(test_data)
-        refer_vector = torch.from_numpy(self.reference_vectors[inference_res])
+        refer_vector = self.reference_vectors[inference_res[0]][0]
         dis = F.pairwise_distance(verify_vector, refer_vector)
         print('dis: %f\n' % dis.item())
 
@@ -57,9 +57,11 @@ def get_max_index(tensor):
     # print('置信度')
     # tensor = F.softmax(tensor, dim=1)
     # print (tensor)
-    tensor = torch.max(tensor, dim=1)[1]
+    tensor = torch.max(tensor, dim=1)
+    probable = tensor[0].item()
+    index = tensor[1].item()
     # 对矩阵延一个固定方向取最大值
-    return torch.squeeze(tensor).data.int()
+    return index, probable
 
 
 def load_model_param(model, model_name):
@@ -77,7 +79,7 @@ def load_model_param(model, model_name):
 
 def main():
     b = Benchmark()
-    for i in range(2):
+    for i in range(20):
         start = time.clock()
         b.offline_test()
         print('cost time %f' % (time.clock() - start))

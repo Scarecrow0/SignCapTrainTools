@@ -372,6 +372,7 @@ min 数组中存的是最小值 乘以scale 数组的值 相当于数据基准�
 """
 
 
+
 class DataScaler:
     """
     全局归一化scaler
@@ -416,58 +417,58 @@ class DataScaler:
         if data_type is not None:
             type_name = scale_type + '_' + data_type
         else:
-            type_name = scale_type
+            type_name = scale_type + '_all'
 
         if scale_type == 'minmax':
             self.scaler[scale_type].min_ = self.scale_datas[type_name][0]
             self.scaler[scale_type].scale_ = self.scale_datas[type_name][1]
             data = self.scaler[scale_type].transform(data)
             data = np.where(data < 0, 0, data)
-            return np.log(1.7 * data + 1)
+            return data
         elif scale_type == 'robust':
             self.scaler[scale_type].center_ = self.scale_datas[type_name][0]
             self.scaler[scale_type].scale_ = self.scale_datas[type_name][1]
             return self.scaler[scale_type].transform(data)
 
-    def generate_scale_data(self, data):
+    def generate_scale_data(self, data, scale_type, data_type):
         """
         根据全局的数据生成scale vector
         :param data: 全局数据
-        :param type_name:  数据的类型
+        :param scale_type: 归一化方式 e.g. MinMax
+        :param data_type: 数据类型  acc emg gyr all
+        :return:
         """
-        for each in self.scaler.keys():
-            if each == 'minmax':
-                data_range = 1.0
-                max_ = np.percentile(data, 99.995, axis=0)
-                min_ = np.percentile(data, 0.005, axis=0)
-                min_ = np.where(abs(min_) < 0.00000001, 0, min_)
+        scale_data_name = '%s_%s' % (scale_type, data_type)
+        if scale_type == 'minmax':
+            data_range = 1.0
+            max_ = np.percentile(data, 99.9995, axis=0)
+            min_ = np.percentile(data, 0.00015, axis=0)
+            min_ = np.where(abs(min_) < 0.00000001, 0, min_)
+    
+            print('max: \n' + str(max_))
+            print('min: \n' + str(min_))
+            scale_ = data_range / _handle_zeros_in_scale(max_ - min_)
+            min_ = 0 - min_ * scale_
+            self.scale_datas[scale_data_name] = (min_, scale_)
 
-                print('max: \n' + str(max_))
-                print('min: \n' + str(min_))
-                scale_ = data_range / _handle_zeros_in_scale(max_ - min_)
-                min_ = 0 - min_ * scale_
-                self.scale_datas[each] = (min_, scale_)
-            elif each == 'robust':
-                self.scale_datas[each] = (self.scaler[each].scale_, self.scaler[each].scale_)
-
-    def split_scale_vector(self, vector_names, vector_range):
+    def split_scale_vector(self, scale_name, vector_names, vector_range):
         """
         拆分scale vactor  生成是将模型各个特征输入拼接到一起生成的vector
         为了便于使用， 将不同特征的数据拆开
+        :param scale_name: 待拆分的scale
         :param vector_names: 拆分后各个scale 的名字
         :param vector_range: 各个子scale对于原scale的范围
         """
         if len(vector_names) != len(vector_range):
             raise ValueError("names and ranges doesn't match")
-        for scale_name in self.scaler.keys():
-            target_scale = self.scale_datas[scale_name]
-            min_ = target_scale[0]
-            scale_ = target_scale[1]
-            for each in range(len(vector_names)):
-                scale_data_name = '%s_%s' % (scale_name, vector_names[each])
-                range_ = vector_range[each]
-                self.scale_datas[scale_data_name] = (min_[range_[0]: range_[1]],
-                                                     scale_[range_[0]: range_[1]])
+        target_scale = self.scale_datas[scale_name]
+        min_ = target_scale[0]
+        scale_ = target_scale[1]
+        for each in range(len(vector_names)):
+            scale_data_name = '%s_%s' % (scale_name, vector_names[each])
+            range_ = vector_range[each]
+            self.scale_datas[scale_data_name] = (min_[range_[0]: range_[1]],
+                                                 scale_[range_[0]: range_[1]])
 
     def store_scale_data(self):
         """
@@ -476,6 +477,9 @@ class DataScaler:
         file_ = open(self.scale_data_path, 'wb')
         pickle.dump(self.scale_datas, file_, protocol=2)
         file_.close()
+
+    def __str__(self):
+        return "curr scalers' type: \n\"%s\"" % str(self.scale_datas.keys())
 
 
 def _handle_zeros_in_scale(scale, copy=True):
